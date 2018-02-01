@@ -157,6 +157,32 @@ module.exports = {
       /**
       * Method for finding all nodes with this label
       * First Arg: required arg for making request
+      * Second Arg: object to search him, full
+      * Method returns full node
+      */
+      static async findOne(session, object){
+        let res;
+        const keyProp = object[Object.keys(object)[0]];
+        await session.run(`
+          MATCH (n:${nameOfLabel} {${Object.keys(object)[0]}: '${keyProp}'})
+          RETURN n LIMIT 1
+        `)
+        .then((result)=>{
+          res = result.records;
+        })
+        .then(()=>{        
+            session.close();
+          })
+          .catch(function(error) {
+              console.log(error);
+          }
+        );
+        return res;
+      }
+
+      /**
+      * Method for finding all nodes with this label
+      * First Arg: required arg for making request
       * Method returns array of objects
       */
       static async findAll(session){
@@ -279,6 +305,56 @@ module.exports = {
               console.log(error);
           });
           return res;
+      }
+
+       /**
+       *Stict Format
+        {
+          sender: {username: 'roik'},
+          reciever: {
+            label: 'User',
+            obj: {
+              username: 'yuragon'
+            }
+          }
+        }
+       */
+      static async findRelationAndDelete(session, obj){
+        let res;
+        const firstNode = obj.sender;
+        const secondNode = obj.reciever;
+
+        const labelSecond = secondNode.label;
+        const objSecond = secondNode.obj;
+
+        const propFirst = Object.keys(firstNode)[0];
+        const propSecond = Object.keys(objSecond)[0];
+
+        console.log('propF: ',firstNode);
+
+        const request = `
+        MATCH (a:${nameOfLabel} {${propFirst}: '${firstNode[propFirst]}'})
+        MATCH (b:${labelSecond} {${propSecond}: '${objSecond[propSecond]}'})
+        MATCH (a)-[r]->(b)
+        DELETE r
+        RETURN a
+        `;
+
+        console.log(request);
+
+        await session.run(request)//making request
+          .then((result)=>{
+            res = result.records;
+          })
+          .then(()=>{        
+            session.close();
+          })
+          .catch(function(error) {
+              console.log(error);
+          }
+        );
+
+        return res;
       }
     }
   }
