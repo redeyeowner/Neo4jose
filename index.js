@@ -47,16 +47,7 @@ module.exports = {
       /**
       * Method for saving object
       * First Arg: required arg for making request
-      * Second Arg: another Object with relationship to our Object
-      * structure of another Object:
-      * {
-      *   fieldOfSearch : Value
-      *   nameOfLabelOfSecond : Value
-      * }
-      * Third Arg: type of relationship between objects
-      * Forth Arg: direction of relationship between objects:
-      * -INTO(<-[r]-)
-      * -OUTTO(-[r]->)
+      * Second Arg: array of objects
       * structure of arrayOfObjects: [
       *   { obj: secondObject, relation: relation, direction: direction }
       * ]
@@ -65,6 +56,9 @@ module.exports = {
       *   propertyForSearch : Value
       *   labelOfThisObject : Value
       * }
+      * Types of direction ship: 
+      * -INTO(<-[r]-)
+      * -OUTTO(-[r]->)
       * Method returns saved object
       */
       async saveWithRelationship(session, arrayOfObjects){

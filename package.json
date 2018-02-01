@@ -1,0 +1,28 @@
+{
+  "name": "neo4jose",
+  "version": "1.0.0",
+  "description": "This is ORM for neo4j db, like mongoose for mongo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/redeyeowner/Neo4jose.git"
+  },
+  "keywords": [
+    "neo4j",
+    "orm",
+    "neo",
+    "net",
+    "seraph_model",
+    "js",
+    "node"
+  ],
+  "author": "redeyeowner",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/redeyeowner/Neo4jose/issues"
+  },
+  "homepage": "https://github.com/redeyeowner/Neo4jose#readme"
+}
