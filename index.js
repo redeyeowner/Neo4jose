@@ -271,10 +271,12 @@ module.exports = {
         const keyProp = object[Object.keys(object)[0]];
         let res;
 
-        //making request        
+        //making request
+        //deleting node and all relationships of this node
         await session.run(`
           MATCH (n:${nameOfLabel} {${Object.keys(object)[0]}: '${ keyProp}'})
-          DELETE n
+          OPTIONAL MATCH (n)-[r]-()
+          DELETE n, r
         `)
           .then(()=>{        
             session.close();
