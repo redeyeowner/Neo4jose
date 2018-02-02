@@ -356,6 +356,64 @@ module.exports = {
 
         return res;
       }
+
+      /**
+       *MATCH (n:User {username: 'nefertiti'})
+        MATCH (v:User {username: 'gawrylo'})
+        MERGE (n)-[r:LOVE]->(v)
+        {
+          sender: {
+            label: 'User',
+            obj: {
+              username: 'roik'
+            }
+          },
+          reciever: {
+            label: 'User',
+            obj: {
+              username: 'yuragon'
+            }
+          },
+          type: 'typeORelationShip'
+        }
+       */
+      static async createRelation(session, obj){
+        let res;
+        const { sender } = obj;//sender of relation
+        const { reciever } = obj;//object of reciever
+        const { type } = obj;
+
+        const senderLabel = sender.label;//label of sender
+        const recieverLabel = reciever.label;//label of sender
+
+        const senderObject = sender.obj;//sender of relation object prop
+        const recieverObject = reciever.obj;//reviever of relation object prop
+
+        const senderProp = Object.keys(senderObject)[0];
+        const recieverProp = Object.keys(recieverObject)[0];
+
+        const request = `
+        MATCH (a:${senderLabel} {${senderProp}: '${senderObject[senderProp]}'})
+        MATCH (b:${recieverLabel} {${recieverProp}: '${recieverObject[recieverProp]}'})
+        MERGE (a)-[r:${type}]->(b)
+        RETURN a, b
+        `;
+
+
+        await session.run(request)//making request
+          .then((result)=>{
+            res = result.records;
+          })
+          .then(()=>{        
+            session.close();
+          })
+          .catch(function(error) {
+              console.log(error);
+          }
+        );
+
+        return res;
+      }
     }
   }
 }
