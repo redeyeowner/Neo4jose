@@ -414,6 +414,105 @@ module.exports = {
 
         return res;
       }
+
+      /**
+       * {
+       *  obj: {
+       *    username: 'username'
+       *  },
+       *  labelInnerNodes: 'User',
+       *  relationship: ''
+       * }
+       */
+
+      //methods return array of relationships of this node
+      static async getAllTypesOfRelOne(session, object){
+        const { obj } = object;
+        const labelInnerNodes = object.labelInnerNodes || nameOfLabel;
+        const prop = Object.keys(obj)[0];
+
+        const res = [];
+
+        const request = `
+          MATCH (:${nameOfLabel} {${prop}: '${obj[prop]}'})-[r]-(:${labelInnerNodes})
+          RETURN r
+        `;
+
+        await session.run(request)
+          .then((result) => {
+            result.records.forEach( tmpRel => {
+              res.push(tmpRel._fields[0].type);
+            });
+          })
+          .then(() => {        
+              session.close();
+            })
+            .catch (function(error) {
+                console.log(error);
+            }
+        );   
+
+        return { data: res };
+      }
+
+      /**
+       * {
+       *   obj: {
+       *     username: 'username'
+       *   },
+       *   labelInnerNodes: 'User',
+       *   relationship: '',
+       *   direction: ''
+       *   
+       * }direction can be INTO OUTTO
+       */
+      static async getRelatedNodes(session, object){
+        const { obj, relationship, direction } = object;
+        const labelInnerNodes = object.labelInnerNodes || nameOfLabel;
+        const prop = Object.keys(obj)[0];
+        const res = [];
+
+        const arrow = {
+          left: "",
+          right: ""
+        }
+
+        switch(direction){
+        case "INTO":
+          arrow.left = "<-";
+          arrow.right = "-";
+          break;
+        case "OUTTO":
+          arrow.left = "-";
+          arrow.right = "->";
+          break;
+        default:
+          arrow.left = "-";
+          arrow.right = "->";
+        }
+
+
+        const requestForIncoming = `
+            MATCH (:${nameOfLabel} {${prop}: '${obj[prop]}'})${arrow.left}[r:${relationship}]${arrow.right}(n:${labelInnerNodes})
+            RETURN n
+        `;
+
+        await session.run(requestForIncoming)
+          .then( async result => {
+            await result.records.forEach( tmpRel => {              
+              res.push(tmpRel._fields[0].properties);
+            });
+          })
+          .then(() => {        
+              session.close();
+            })
+            .catch (function(error) {
+                console.log(error);
+            }
+          );
+
+          return res;
+      }
     }
   }
 }
