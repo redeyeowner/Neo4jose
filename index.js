@@ -1,9 +1,9 @@
 module.exports = {
-  model : function(nameOfLabel){
-    return class ClassName{
-      constructor(obj){
+  model: function(nameOfLabel) {
+    return class ClassName {
+      constructor(obj) {
         //setting properties of class from obj
-        Object.keys(obj).forEach((params)=>{
+        Object.keys(obj).forEach((params) => {
           this[params] = obj[params];
         })
 
@@ -12,20 +12,20 @@ module.exports = {
       }
 
       /**
-      * Method for saving object
-      * First Arg: required arg for making request
-      * Method returns saved object
-      */
-      async save(session){
+       * Method for saving object
+       * First Arg: required arg for making request
+       * Method returns saved object
+       */
+      async save(session) {
         let stringOfProperties = '';
 
-        Object.keys(this._mainObj).forEach((prop)=>{
+        Object.keys(this._mainObj).forEach((prop) => {
           stringOfProperties += (prop + ": " +
-          "'" + this._mainObj[prop] + "',"
+            "'" + this._mainObj[prop] + "',"
           );
         });
 
-        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length-1);
+        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length - 1);
 
         await session.run(`
           CREATE (n:${nameOfLabel} {
@@ -33,66 +33,65 @@ module.exports = {
           })
           RETURN n
         `)
-          .then(()=>{        
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
-    
+            console.log(error);
+          });
+
         return this._mainObj;
       }
 
       /**
-      * Method for saving object
-      * First Arg: required arg for making request
-      * Second Arg: array of objects
-      * structure of arrayOfObjects: [
-      *   { obj: secondObject, relation: relation, direction: direction }
-      * ]
-      * structure of secondObject:
-      * {
-      *   propertyForSearch : Value
-      *   labelOfThisObject : Value
-      * }
-      * Types of direction ship: 
-      * -INTO(<-[r]-)
-      * -OUTTO(-[r]->)
-      * Method returns saved object
-      */
-      async saveWithRelationship(session, arrayOfObjects){
+       * Method for saving object
+       * First Arg: required arg for making request
+       * Second Arg: array of objects
+       * structure of arrayOfObjects: [
+       *   { obj: secondObject, relation: relation, direction: direction }
+       * ]
+       * structure of secondObject:
+       * {
+       *   propertyForSearch : Value
+       *   labelOfThisObject : Value
+       * }
+       * Types of direction ship: 
+       * -INTO(<-[r]-)
+       * -OUTTO(-[r]->)
+       * Method returns saved object
+       */
+      async saveWithRelationship(session, arrayOfObjects) {
         let stringOfProperties = '',
-            resultStr = '';
-        
-        const arrOfKeysProp = arrayOfObjects.map((object)=>{
+          resultStr = '';
+
+        const arrOfKeysProp = arrayOfObjects.map((object) => {
           return object.obj[Object.keys(object.obj)[0]];
         });
 
-        const arrOfRelation = arrayOfObjects.map((object)=>{
+        const arrOfRelation = arrayOfObjects.map((object) => {
           return object.relation;
         });
 
-        const arrOfDirection = arrayOfObjects.map((object)=>{
+        const arrOfDirection = arrayOfObjects.map((object) => {
           return object.direction;
         });
 
-        const arrOfNamesSecLabels = arrayOfObjects.map((object)=>{
+        const arrOfNamesSecLabels = arrayOfObjects.map((object) => {
           return object.obj[Object.keys(object.obj)[1]];
         });
 
         //making part with properties of node that will be created
-        Object.keys(this._mainObj).forEach((prop)=>{
+        Object.keys(this._mainObj).forEach((prop) => {
           stringOfProperties += (prop + ": " +
             "'" + this._mainObj[prop] + "',"
           );
         });
 
         //deleting last coma
-        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length-1);
+        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length - 1);
 
         //add part of selecting needed nodes that will in relationship with created
-        for(let i = 0; i < arrayOfObjects.length; i++){
+        for (let i = 0; i < arrayOfObjects.length; i++) {
           let symbolLat = String.fromCharCode(97 + i);
           resultStr += `MATCH (${symbolLat}:${arrOfNamesSecLabels[i]} {
             ${Object.keys(arrayOfObjects[i].obj)[0]}: '${arrOfKeysProp[i]}' 
@@ -102,7 +101,7 @@ module.exports = {
         //add keyword to working with selected nodes
         resultStr += `WITH `
 
-        for(let i = 0; i < arrayOfObjects.length; i++){
+        for (let i = 0; i < arrayOfObjects.length; i++) {
           resultStr += `${String.fromCharCode(97 + i)},`;
         }
 
@@ -113,7 +112,7 @@ module.exports = {
           CREATE (iam:${nameOfLabel} {${stringOfProperties}}),
         `;
 
-        for(let i = 0; i < arrayOfObjects.length; i++){
+        for (let i = 0; i < arrayOfObjects.length; i++) {
           const arrow = {
             left: "",
             right: ""
@@ -121,18 +120,18 @@ module.exports = {
 
           //setting arrows that in request mean direction of relationship
           //beetween nodes
-          switch(arrOfDirection[i]){
-          case "INTO":
-            arrow.left = "<-";
-            arrow.right = "-";
-            break;
-          case "OUTTO":
-            arrow.left = "-";
-            arrow.right = "->";
-            break;
-          default:
-            arrow.left = "-";
-            arrow.right = "->";
+          switch (arrOfDirection[i]) {
+            case "INTO":
+              arrow.left = "<-";
+              arrow.right = "-";
+              break;
+            case "OUTTO":
+              arrow.left = "-";
+              arrow.right = "->";
+              break;
+            default:
+              arrow.left = "-";
+              arrow.right = "->";
           }
 
           //add to request relationship with another nodes in db
@@ -142,65 +141,92 @@ module.exports = {
         //deleting last coma
         resultStr = await resultStr.slice(0, resultStr.length - 1);
 
-        await session.run(resultStr + ' RETURN iam')//making request
-          .then(()=>{        
+        await session.run(resultStr + ' RETURN iam') //making request
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
-    
+            console.log(error);
+          });
+
         return this._mainObj;
       }
 
       /**
-      * Method for finding all nodes with this label
-      * First Arg: required arg for making request
-      * Second Arg: object to search him, full
-      * Method returns full node
-      */
-      static async findOne(session, object){
+       * Method for finding all nodes with this label
+       * First Arg: required arg for making request
+       * Second Arg: object to search him, full
+       * Method returns full node
+       */
+      static async findOne(session, object) {
         let res;
         const keyProp = object[Object.keys(object)[0]];
         await session.run(`
           MATCH (n:${nameOfLabel} {${Object.keys(object)[0]}: '${keyProp}'})
           RETURN n LIMIT 1
         `)
-        .then((result)=>{
-          res = result.records;
-        })
-        .then(()=>{        
+          .then((result) => {
+            res = result.records;
+          })
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
+            console.log(error);
+          });
         return res;
       }
 
       /**
-      * Method for finding all nodes with this label
-      * First Arg: required arg for making request
-      * Method returns array of objects
-      */
-      static async findAll(session){
+       * Method for finding all nodes with this label
+       * First Arg: required arg for making request
+       * Method returns array of objects
+       */
+      static async findAll(session) {
         let res;
         await session.run(`
           MATCH (n:${nameOfLabel})
           RETURN n
         `)
-        .then((result)=>{
-          res = result.records;
-        })
-        .then(()=>{        
+          .then((result) => {
+            res = result.records;
+          })
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
+            console.log(error);
+          });
+        return res;
+      }
+
+      /**
+       * 
+       * like previous method, but where
+       * u can choose amout of nodes that
+       * u wanna get
+       */
+      static async findAllLimited(session, object) {
+        const { limit } = object;
+        let res;
+
+        if (limit <= 0)
+          return { message: 'limit is less or equal 0' };
+
+        await session.run(`
+          MATCH (n:${nameOfLabel})
+          RETURN n LIMIT ${limit}
+        `)
+          .then((result) => {
+            res = result.records;
+          })
+          .then(() => {
+            session.close();
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
+
         return res;
       }
 
@@ -215,7 +241,7 @@ module.exports = {
        * }
        * Method returns boolean value
        */
-      static async isAlreadyExist(session, object){
+      static async isAlreadyExist(session, object) {
         let arr = '';
         const keyProp = object[Object.keys(object)[0]];
 
@@ -224,14 +250,14 @@ module.exports = {
           MATCH (n:${nameOfLabel} {${Object.keys(object)[0]}: '${keyProp}'}) 
           RETURN n
         `)
-          .then((result)=>{
+          .then((result) => {
             arr = (result.records.length > 0) || '';
           })
-          .then(()=>{        
-              session.close();
+          .then(() => {
+            session.close();
           })
-          .catch((error)=>{
-                console.log(error);
+          .catch((error) => {
+            console.log(error);
           });
 
         return arr !== '';
@@ -248,34 +274,34 @@ module.exports = {
        * Third Arg: object with new properties of node
        * Method returns new object if it was updated
        */
-      static async findAndUpdate(session, objectF, objectNew){
+      static async findAndUpdate(session, objectF, objectNew) {
         const keyProp = objectF[Object.keys(objectF)[0]];
         let stringOfProperties = '',
-            res;
+          res;
 
         //setting part of request with new properties    
-        Object.keys(objectNew).forEach((prop)=>{
+        Object.keys(objectNew).forEach((prop) => {
           stringOfProperties += ("n." + prop + " = " + "'" + objectNew[prop] + "',");
         });
-    
-        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length-1);    
-    
+
+        stringOfProperties = stringOfProperties.slice(0, stringOfProperties.length - 1);
+
         //Making request
         await session.run(`
           MATCH (n:${nameOfLabel} {${Object.keys(objectF)[0]}: '${keyProp}'})
           SET ${stringOfProperties}
           RETURN n 
         `)
-          .then((result)=>{
+          .then((result) => {
             res = result.records;
           })
-          .then(()=>{        
+          .then(() => {
             session.close();
           })
-          .catch((error)=>{
-              console.log(error);
+          .catch((error) => {
+            console.log(error);
           });
-          return res;
+        return res;
       }
 
       /**
@@ -287,7 +313,7 @@ module.exports = {
        *   labelOfThisObject : Value
        * }
        */
-      static async findAndDelete(session, object){
+      static async findAndDelete(session, object) {
         const keyProp = object[Object.keys(object)[0]];
         let res;
 
@@ -298,28 +324,28 @@ module.exports = {
           OPTIONAL MATCH (n)-[r]-()
           DELETE n, r
         `)
-          .then(()=>{        
+          .then(() => {
             session.close();
           })
-          .catch((error)=>{
-              console.log(error);
+          .catch((error) => {
+            console.log(error);
           });
-          return res;
+        return res;
       }
 
-       /**
-       *Stict Format
-        {
-          sender: {username: 'roik'},
-          reciever: {
-            label: 'User',
-            obj: {
-              username: 'yuragon'
-            }
-          }
-        }
-       */
-      static async findRelationAndDelete(session, obj){
+      /**
+      *Stict Format
+       {
+         sender: {username: 'roik'},
+         reciever: {
+           label: 'User',
+           obj: {
+             username: 'yuragon'
+           }
+         }
+       }
+      */
+      static async findRelationAndDelete(session, obj) {
         let res;
         const firstNode = obj.sender;
         const secondNode = obj.reciever;
@@ -330,7 +356,7 @@ module.exports = {
         const propFirst = Object.keys(firstNode)[0];
         const propSecond = Object.keys(objSecond)[0];
 
-        console.log('propF: ',firstNode);
+        console.log('propF: ', firstNode);
 
         const request = `
         MATCH (a:${nameOfLabel} {${propFirst}: '${firstNode[propFirst]}'})
@@ -342,17 +368,16 @@ module.exports = {
 
         console.log(request);
 
-        await session.run(request)//making request
-          .then((result)=>{
+        await session.run(request) //making request
+          .then((result) => {
             res = result.records;
           })
-          .then(()=>{        
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
+            console.log(error);
+          });
 
         return res;
       }
@@ -377,17 +402,17 @@ module.exports = {
           type: 'typeORelationShip'
         }
        */
-      static async createRelation(session, obj){
+      static async createRelation(session, obj) {
         let res;
-        const { sender } = obj;//sender of relation
-        const { reciever } = obj;//object of reciever
+        const { sender } = obj; //sender of relation
+        const { reciever } = obj; //object of reciever
         const { type } = obj;
 
-        const senderLabel = sender.label;//label of sender
-        const recieverLabel = reciever.label;//label of sender
+        const senderLabel = sender.label; //label of sender
+        const recieverLabel = reciever.label; //label of sender
 
-        const senderObject = sender.obj;//sender of relation object prop
-        const recieverObject = reciever.obj;//reviever of relation object prop
+        const senderObject = sender.obj; //sender of relation object prop
+        const recieverObject = reciever.obj; //reviever of relation object prop
 
         const senderProp = Object.keys(senderObject)[0];
         const recieverProp = Object.keys(recieverObject)[0];
@@ -400,17 +425,16 @@ module.exports = {
         `;
 
 
-        await session.run(request)//making request
-          .then((result)=>{
+        await session.run(request) //making request
+          .then((result) => {
             res = result.records;
           })
-          .then(()=>{        
+          .then(() => {
             session.close();
           })
           .catch(function(error) {
-              console.log(error);
-          }
-        );
+            console.log(error);
+          });
 
         return res;
       }
@@ -426,7 +450,7 @@ module.exports = {
        */
 
       //methods return array of relationships of this node
-      static async getAllTypesOfRelOne(session, object){
+      static async getAllTypesOfRelOne(session, object) {
         const { obj } = object;
         const labelInnerNodes = object.labelInnerNodes || nameOfLabel;
         const prop = Object.keys(obj)[0];
@@ -440,17 +464,16 @@ module.exports = {
 
         await session.run(request)
           .then((result) => {
-            result.records.forEach( tmpRel => {
+            result.records.forEach(tmpRel => {
               res.push(tmpRel._fields[0].type);
             });
           })
-          .then(() => {        
-              session.close();
-            })
-            .catch (function(error) {
-                console.log(error);
-            }
-        );   
+          .then(() => {
+            session.close();
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
 
         return { data: res };
       }
@@ -466,7 +489,7 @@ module.exports = {
        *   
        * }direction can be INTO OUTTO
        */
-      static async getRelatedNodes(session, object){
+      static async getRelatedNodes(session, object) {
         const { obj, relationship, direction } = object;
         const labelInnerNodes = object.labelInnerNodes || nameOfLabel;
         const prop = Object.keys(obj)[0];
@@ -477,18 +500,18 @@ module.exports = {
           right: ""
         }
 
-        switch(direction){
-        case "INTO":
-          arrow.left = "<-";
-          arrow.right = "-";
-          break;
-        case "OUTTO":
-          arrow.left = "-";
-          arrow.right = "->";
-          break;
-        default:
-          arrow.left = "-";
-          arrow.right = "->";
+        switch (direction) {
+          case "INTO":
+            arrow.left = "<-";
+            arrow.right = "-";
+            break;
+          case "OUTTO":
+            arrow.left = "-";
+            arrow.right = "->";
+            break;
+          default:
+            arrow.left = "-";
+            arrow.right = "->";
         }
 
 
@@ -498,20 +521,19 @@ module.exports = {
         `;
 
         await session.run(requestForIncoming)
-          .then( async result => {
-            await result.records.forEach( tmpRel => {              
+          .then(async result => {
+            await result.records.forEach(tmpRel => {
               res.push(tmpRel._fields[0].properties);
             });
           })
-          .then(() => {        
-              session.close();
-            })
-            .catch (function(error) {
-                console.log(error);
-            }
-          );
+          .then(() => {
+            session.close();
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
 
-          return res;
+        return res;
       }
     }
   }
